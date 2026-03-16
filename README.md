@@ -20,7 +20,7 @@ LXC контейнер (Debian 13)
 На **хосте Proxmox**:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ТВОЙ_USERNAME/proxyveth/main/proxyveth-install.sh -o install.sh
+curl -fsSL https://raw.githubusercontent.com/Tovarish666/ProxyVeth/main/proxyveth-install.sh -o install.sh
 bash install.sh
 ```
 
@@ -32,7 +32,7 @@ bash install.sh
 # 1. Создать LXC контейнер (Debian 13)
 # 2. Настроить: privileged, nesting, /dev/net/tun, eth1 на vmbr101
 # 3. В контейнере:
-curl -fsSL https://raw.githubusercontent.com/ТВОЙ_USERNAME/proxyveth/main/proxyveth.py \
+curl -fsSL https://raw.githubusercontent.com/Tovarish666/ProxyVeth/main/proxyveth.py \
   -o /usr/local/bin/proxyveth.py && chmod +x /usr/local/bin/proxyveth.py
 python3 /usr/local/bin/proxyveth.py
 ```
@@ -54,7 +54,7 @@ python3 /usr/local/bin/proxyveth.py
 ## Обновление
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ТВОЙ_USERNAME/proxyveth/main/proxyveth.py \
+curl -fsSL https://raw.githubusercontent.com/Tovarish666/ProxyVeth/main/proxyveth.py \
   -o /usr/local/bin/proxyveth.py && proxyveth restart all
 ```
 
