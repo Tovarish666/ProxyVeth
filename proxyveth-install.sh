@@ -306,12 +306,27 @@ ok "proxyveth.py установлен"
 # Прописать SHEET_CSV_URL
 if [ -n "$SHEET_CSV_URL" ]; then
     step "Прописываю Sheet URL..."
-    # Экранируем URL для sed
-    ESCAPED_URL=$(echo "$SHEET_CSV_URL" | sed 's/[&/]/\\&/g')
-    pct exec "$CT_ID" -- bash -c "sed -i 's|^SHEET_CSV_URL.*=.*|SHEET_CSV_URL  = os.getenv(\"SHEET_CSV_URL\", \"$SHEET_CSV_URL\")|' /usr/local/bin/proxyveth.py" 2>/dev/null || {
-        # Если sed не сработал — через переменную окружения
-        warn "sed не сработал, URL нужно вписать вручную"
-    }
+    # sed не справляется с многострочным блоком os.getenv(... ) в proxyveth.py,
+    # поэтому используем Python-патч: создаём скрипт на хосте, пушим в контейнер.
+    TMPSCRIPT=$(mktemp /tmp/patch_proxyveth_XXXXXX.py)
+    cat > "$TMPSCRIPT" << PYEOF
+import re
+url = """$SHEET_CSV_URL"""
+path = '/usr/local/bin/proxyveth.py'
+content = open(path).read()
+replacement = 'SHEET_CSV_URL  = os.getenv("SHEET_CSV_URL", "' + url + '")'
+new_content = re.sub(
+    r'SHEET_CSV_URL\s*=\s*os\.getenv\("SHEET_CSV_URL"[^)]*\)',
+    lambda m: replacement,
+    content,
+    flags=re.DOTALL
+)
+open(path, 'w').write(new_content)
+PYEOF
+    pct push "$CT_ID" "$TMPSCRIPT" /tmp/patch_proxyveth.py
+    pct exec "$CT_ID" -- python3 /tmp/patch_proxyveth.py
+    pct exec "$CT_ID" -- rm -f /tmp/patch_proxyveth.py
+    rm -f "$TMPSCRIPT"
     ok "Sheet URL прописан"
 fi
 
