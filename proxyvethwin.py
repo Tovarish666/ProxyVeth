@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-ProxyVeth Manager v2.0
+ProxyVethWin Manager v2.0
 ======================
 SOCKS5 → virtual NIC. Google Sheets → namespaces → Win10 VM.
 
 ПЕРВЫЙ ЗАПУСК (без аргументов):
-  python3 /usr/local/bin/proxyveth.py
+  python3 /usr/local/bin/proxyvethwin.py
   → install → sync → init → up all → systemd → PATH → готово
 
 КОМАНДЫ:
@@ -49,11 +49,11 @@ SHEET_CSV_URL  = os.getenv("SHEET_CSV_URL",
     "_jpDBhYmE2SQuYOqBAfiY73/pub?gid=0&single=true&output=csv")
 
 # ==================== Paths ====================
-CONFIG_DIR     = Path(os.getenv("PROXYVETH_DIR", "/etc/proxyveth"))
+CONFIG_DIR     = Path(os.getenv("PROXYVETHWIN_DIR", "/etc/proxyvethwin"))
 CONFIG_FILE    = CONFIG_DIR / "config.json"
 LOG_DIR        = CONFIG_DIR / "logs"
 WATCHDOG_LOG   = LOG_DIR / "watchdog.log"
-SCRIPT_PATH    = Path("/usr/local/bin/proxyveth.py")
+SCRIPT_PATH    = Path("/usr/local/bin/proxyvethwin.py")
 TUN2SOCKS_BIN  = "/usr/local/bin/tun2socks"
 TUN2SOCKS_VER  = "2.5.2"
 TUN2SOCKS_URL  = (f"https://github.com/xjasonlyu/tun2socks/releases/download/"
@@ -162,7 +162,7 @@ def get_ct_id():
     try:
         with open("/etc/hostname") as f:
             hostname = f.read().strip()
-        # Типичный формат: proxyveth1 → ищем в pct list
+        # Типичный формат: proxyvethwin1 → ищем в pct list
         return hostname
     except Exception:
         return "???"
@@ -175,7 +175,7 @@ def get_ct_id():
 def load_config():
     if not CONFIG_FILE.exists():
         log_fail(f"Конфиг не найден: {CONFIG_FILE}")
-        log_info("Запусти: proxyveth sync")
+        log_info("Запусти: proxyvethwin sync")
         sys.exit(1)
     with open(CONFIG_FILE) as f:
         return json.load(f)
@@ -523,7 +523,7 @@ def cmd_init():
     log_ok(f"{ETH_TRUNK} поднят (trunk)")
 
     if not Path(TUN2SOCKS_BIN).exists():
-        log_fail(f"tun2socks не найден! Запусти: proxyveth install")
+        log_fail(f"tun2socks не найден! Запусти: proxyvethwin install")
     else:
         log_ok(f"tun2socks OK")
 
@@ -539,15 +539,15 @@ def ensure_init():
 def setup_path():
     """Добавить /usr/local/bin в PATH + создать symlink."""
     # Symlink
-    link = Path("/usr/local/bin/proxyveth")
+    link = Path("/usr/local/bin/proxyvethwin")
     if not link.exists() or not link.is_symlink():
         link.unlink(missing_ok=True)
         link.symlink_to(SCRIPT_PATH)
-        log_ok("Symlink: proxyveth → proxyveth.py")
+        log_ok("Symlink: proxyvethwin → proxyvethwin.py")
 
     # bashrc PATH
     bashrc = Path("/root/.bashrc")
-    marker = "# proxyveth PATH"
+    marker = "# proxyvethwin PATH"
     if bashrc.exists():
         content = bashrc.read_text()
     else:
@@ -561,16 +561,16 @@ def setup_path():
 
 
 def setup_systemd():
-    """Создать systemd units для proxyveth + watchdog + autosync."""
+    """Создать systemd units для proxyvethwin + watchdog + autosync."""
     header("SYSTEMD: создание сервисов")
 
     py = "/usr/bin/python3"
     script = str(SCRIPT_PATH)
 
     # 1. Main service
-    Path("/etc/systemd/system/proxyveth.service").write_text(f"""\
+    Path("/etc/systemd/system/proxyvethwin.service").write_text(f"""\
 [Unit]
-Description=ProxyVeth - namespace manager
+Description=ProxyVethWin - namespace manager
 After=network-online.target
 Wants=network-online.target
 
@@ -585,14 +585,14 @@ ExecStop={py} {script} down all
 [Install]
 WantedBy=multi-user.target
 """)
-    log_ok("proxyveth.service")
+    log_ok("proxyvethwin.service")
 
     # 2. Watchdog
-    Path("/etc/systemd/system/proxyveth-watchdog.service").write_text(f"""\
+    Path("/etc/systemd/system/proxyvethwin-watchdog.service").write_text(f"""\
 [Unit]
-Description=ProxyVeth Watchdog
-After=proxyveth.service
-Requires=proxyveth.service
+Description=ProxyVethWin Watchdog
+After=proxyvethwin.service
+Requires=proxyvethwin.service
 
 [Service]
 Type=simple
@@ -606,22 +606,22 @@ Environment=WATCHDOG_MAX_RESTART=3
 [Install]
 WantedBy=multi-user.target
 """)
-    log_ok("proxyveth-watchdog.service")
+    log_ok("proxyvethwin-watchdog.service")
 
     # 3. Autosync timer
-    Path("/etc/systemd/system/proxyveth-autosync.service").write_text(f"""\
+    Path("/etc/systemd/system/proxyvethwin-autosync.service").write_text(f"""\
 [Unit]
-Description=ProxyVeth Autosync
-After=proxyveth.service
+Description=ProxyVethWin Autosync
+After=proxyvethwin.service
 
 [Service]
 Type=oneshot
 ExecStart={py} {script} autosync
 """)
 
-    Path("/etc/systemd/system/proxyveth-autosync.timer").write_text(f"""\
+    Path("/etc/systemd/system/proxyvethwin-autosync.timer").write_text(f"""\
 [Unit]
-Description=ProxyVeth Autosync Timer
+Description=ProxyVethWin Autosync Timer
 
 [Timer]
 OnBootSec=2min
@@ -631,18 +631,18 @@ Persistent=true
 [Install]
 WantedBy=timers.target
 """)
-    log_ok("proxyveth-autosync.timer (каждые 5 мин)")
+    log_ok("proxyvethwin-autosync.timer (каждые 5 мин)")
 
     # Enable
     run("systemctl daemon-reload", capture=True)
-    run("systemctl enable proxyveth.service", capture=True)
-    run("systemctl enable proxyveth-watchdog.service", capture=True)
-    run("systemctl enable proxyveth-autosync.timer", capture=True)
+    run("systemctl enable proxyvethwin.service", capture=True)
+    run("systemctl enable proxyvethwin-watchdog.service", capture=True)
+    run("systemctl enable proxyvethwin-autosync.timer", capture=True)
     log_ok("Все сервисы enabled")
 
     # Start watchdog + timer
-    run_safe("systemctl start proxyveth-watchdog.service", capture=True, quiet=True)
-    run_safe("systemctl start proxyveth-autosync.timer", capture=True, quiet=True)
+    run_safe("systemctl start proxyvethwin-watchdog.service", capture=True, quiet=True)
+    run_safe("systemctl start proxyvethwin-autosync.timer", capture=True, quiet=True)
     log_ok("Watchdog и autosync запущены")
 
 
@@ -652,7 +652,7 @@ WantedBy=timers.target
 
 def cmd_setup():
     """Полная установка: install → sync → init → up all → systemd → PATH."""
-    header("ProxyVeth — ПОЛНАЯ УСТАНОВКА")
+    header("ProxyVethWin — ПОЛНАЯ УСТАНОВКА")
     print(f"""
   {D}Этот скрипт выполнит:{R}
   1. Установка зависимостей (tun2socks, dnsmasq, ...)
@@ -696,15 +696,15 @@ def cmd_setup():
   {G}✓{R} Автостарт: при перезагрузке контейнера
 
   {B}Команды:{R}
-    proxyveth status          — статус всех NS
-    proxyveth status --wan    — с проверкой WAN IP (медленно)
-    proxyveth check N         — полная проверка одного NS
-    proxyveth restart N       — перезапуск одного NS
-    proxyveth restart all     — перезапуск всех NS
-    proxyveth down all        — остановить всё
+    proxyvethwin status          — статус всех NS
+    proxyvethwin status --wan    — с проверкой WAN IP (медленно)
+    proxyvethwin check N         — полная проверка одного NS
+    proxyvethwin restart N       — перезапуск одного NS
+    proxyvethwin restart all     — перезапуск всех NS
+    proxyvethwin down all        — остановить всё
 
   {B}Логи:{R}
-    journalctl -u proxyveth-watchdog -f
+    journalctl -u proxyvethwin-watchdog -f
     cat {WATCHDOG_LOG}
 
   {D}Перезайди в терминал чтобы PATH обновился,
@@ -1176,10 +1176,10 @@ def cmd_show_config():
 #  MAIN
 # ══════════════════════════════════════════════════════════════
 
-USAGE = f"""{B}ProxyVeth v2.0{R}
+USAGE = f"""{B}ProxyVethWin v2.0{R}
 
 {C}Первый запуск:{R}
-  python3 /usr/local/bin/proxyveth.py      (без аргументов = полная установка)
+  python3 /usr/local/bin/proxyvethwin.py      (без аргументов = полная установка)
 
 {C}Команды:{R}
   sync                    Google Sheets → config.json
@@ -1212,17 +1212,17 @@ def main():
         elif cmd == "autosync":     cmd_autosync()
         elif cmd == "init":         cmd_init()
         elif cmd == "up":
-            if not arg: log_fail("proxyveth up [N|all]"); sys.exit(1)
+            if not arg: log_fail("proxyvethwin up [N|all]"); sys.exit(1)
             cmd_up(arg)
         elif cmd == "down":
-            if not arg: log_fail("proxyveth down [N|all]"); sys.exit(1)
+            if not arg: log_fail("proxyvethwin down [N|all]"); sys.exit(1)
             cmd_down(arg)
         elif cmd == "restart":
-            if not arg: log_fail("proxyveth restart [N|all]"); sys.exit(1)
+            if not arg: log_fail("proxyvethwin restart [N|all]"); sys.exit(1)
             cmd_restart(arg)
         elif cmd == "status":       cmd_status(check_wan="--wan" in flags)
         elif cmd == "check":
-            if not arg: log_fail("proxyveth check N"); sys.exit(1)
+            if not arg: log_fail("proxyvethwin check N"); sys.exit(1)
             cmd_check(arg)
         elif cmd == "watchdog":       cmd_watchdog()
         elif cmd == "watchdog_loop":  cmd_watchdog_loop()

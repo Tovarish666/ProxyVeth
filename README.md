@@ -1,4 +1,4 @@
-# ProxyVeth
+# ProxyVethWin
 
 SOCKS5 прокси → виртуальные сетевые адаптеры для Win10 VM в Proxmox.
 
@@ -20,7 +20,7 @@ LXC контейнер (Debian 13)
 На **хосте Proxmox**:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Tovarish666/ProxyVeth/main/proxyveth-install.sh -o install.sh
+curl -fsSL https://raw.githubusercontent.com/Tovarish666/ProxyVethWin/main/proxyvethwin-install.sh -o install.sh
 bash install.sh
 ```
 
@@ -32,9 +32,9 @@ bash install.sh
 # 1. Создать LXC контейнер (Debian 13)
 # 2. Настроить: privileged, nesting, /dev/net/tun, eth1 на vmbr101
 # 3. В контейнере:
-curl -fsSL https://raw.githubusercontent.com/Tovarish666/ProxyVeth/main/proxyveth.py \
-  -o /usr/local/bin/proxyveth.py && chmod +x /usr/local/bin/proxyveth.py
-python3 /usr/local/bin/proxyveth.py
+curl -fsSL https://raw.githubusercontent.com/Tovarish666/ProxyVethWin/main/proxyvethwin.py \
+  -o /usr/local/bin/proxyvethwin.py && chmod +x /usr/local/bin/proxyvethwin.py
+python3 /usr/local/bin/proxyvethwin.py
 ```
 
 Если чего-то не хватает (eth1, tun) — скрипт покажет инструкцию.
@@ -43,19 +43,19 @@ python3 /usr/local/bin/proxyveth.py
 
 | Команда | Описание |
 |---------|----------|
-| `proxyveth` | Полная установка (первый запуск) |
-| `proxyveth status` | Статус всех namespace |
-| `proxyveth status --wan` | С проверкой WAN IP |
-| `proxyveth check N` | Полная проверка одного модема |
-| `proxyveth restart all` | Перезапуск всех |
-| `proxyveth sync` | Обновить конфиг из Google Sheets |
-| `proxyveth show-config` | Показать конфиг |
+| `proxyvethwin` | Полная установка (первый запуск) |
+| `proxyvethwin status` | Статус всех namespace |
+| `proxyvethwin status --wan` | С проверкой WAN IP |
+| `proxyvethwin check N` | Полная проверка одного модема |
+| `proxyvethwin restart all` | Перезапуск всех |
+| `proxyvethwin sync` | Обновить конфиг из Google Sheets |
+| `proxyvethwin show-config` | Показать конфиг |
 
 ## Обновление
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Tovarish666/ProxyVeth/main/proxyveth.py \
-  -o /usr/local/bin/proxyveth.py && proxyveth restart all
+curl -fsSL https://raw.githubusercontent.com/Tovarish666/ProxyVethWin/main/proxyvethwin.py \
+  -o /usr/local/bin/proxyvethwin.py && proxyvethwin restart all
 ```
 
 ## Лимиты

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# ProxyVeth Installer v2.0
+# ProxyVethWin Installer v2.0
 # ========================
 # Запускать на ХОСТЕ Proxmox (не в контейнере!)
 #
@@ -9,11 +9,11 @@
 #   2. Настраивает привилегии (tun, nesting)
 #   3. Создаёт VLAN-aware мост vmbr101
 #   4. Добавляет trunk-интерфейс eth1
-#   5. Скачивает и запускает proxyveth.py
+#   5. Скачивает и запускает proxyvethwin.py
 #   6. Создаёт сетевые адаптеры на Win10 VM (по данным из таблицы)
 #
 # Использование:
-#   bash proxyveth-install.sh
+#   bash proxyvethwin-install.sh
 #
 
 set -e
@@ -25,8 +25,8 @@ set -e
 # Google Sheets — pubhtml CSV ссылка
 SHEET_CSV_URL="${SHEET_CSV_URL:-}"
 
-# GitHub — откуда скачивать proxyveth.py
-GITHUB_RAW="${GITHUB_RAW:-https://raw.githubusercontent.com/ТВОЙ_USERNAME/proxyveth/main/proxyveth.py}"
+# GitHub — откуда скачивать proxyvethwin.py
+GITHUB_RAW="${GITHUB_RAW:-https://raw.githubusercontent.com/ТВОЙ_USERNAME/proxyvethwin/main/proxyvethwin.py}"
 
 # Proxmox storage для контейнера
 STORAGE="${STORAGE:-local-lvm}"
@@ -75,7 +75,7 @@ fi
 
 echo -e "
 ${B}══════════════════════════════════════════════════════════
-  ProxyVeth Installer
+  ProxyVethWin Installer
 ══════════════════════════════════════════════════════════${R}
 "
 
@@ -113,7 +113,7 @@ fi
 
 # GitHub URL
 echo ""
-info "Откуда скачивать proxyveth.py?"
+info "Откуда скачивать proxyvethwin.py?"
 GITHUB_RAW=$(ask "GitHub raw URL" "$GITHUB_RAW")
 
 # Контейнер — сеть
@@ -204,7 +204,7 @@ else
     fi
 
     pct create "$CT_ID" "local:vztmpl/$TEMPLATE" \
-        --hostname proxyveth \
+        --hostname proxyvethwin \
         --rootfs "$STORAGE:4" \
         --cores 2 \
         --memory 512 \
@@ -277,10 +277,10 @@ fi
 
 
 # ═══════════════════════════════════════════════════════════
-#  Шаг 5: Запуск контейнера + установка proxyveth.py
+#  Шаг 5: Запуск контейнера + установка proxyvethwin.py
 # ═══════════════════════════════════════════════════════════
 
-header "▸ Шаг 5: Запуск и установка ProxyVeth"
+header "▸ Шаг 5: Запуск и установка ProxyVethWin"
 
 pct start "$CT_ID" 2>/dev/null || true
 sleep 3
@@ -298,21 +298,21 @@ done
 pct exec "$CT_ID" -- bash -c "apt update -qq && apt install -y -qq curl python3 > /dev/null 2>&1"
 ok "curl + python3"
 
-# Скачать proxyveth.py
-step "Скачиваю proxyveth.py..."
-pct exec "$CT_ID" -- bash -c "curl -fsSL '$GITHUB_RAW' -o /usr/local/bin/proxyveth.py && chmod +x /usr/local/bin/proxyveth.py"
-ok "proxyveth.py установлен"
+# Скачать proxyvethwin.py
+step "Скачиваю proxyvethwin.py..."
+pct exec "$CT_ID" -- bash -c "curl -fsSL '$GITHUB_RAW' -o /usr/local/bin/proxyvethwin.py && chmod +x /usr/local/bin/proxyvethwin.py"
+ok "proxyvethwin.py установлен"
 
 # Прописать SHEET_CSV_URL
 if [ -n "$SHEET_CSV_URL" ]; then
     step "Прописываю Sheet URL..."
-    # sed не справляется с многострочным блоком os.getenv(... ) в proxyveth.py,
+    # sed не справляется с многострочным блоком os.getenv(... ) в proxyvethwin.py,
     # поэтому используем Python-патч: создаём скрипт на хосте, пушим в контейнер.
-    TMPSCRIPT=$(mktemp /tmp/patch_proxyveth_XXXXXX.py)
+    TMPSCRIPT=$(mktemp /tmp/patch_proxyvethwin_XXXXXX.py)
     cat > "$TMPSCRIPT" << PYEOF
 import re
 url = """$SHEET_CSV_URL"""
-path = '/usr/local/bin/proxyveth.py'
+path = '/usr/local/bin/proxyvethwin.py'
 content = open(path).read()
 replacement = 'SHEET_CSV_URL  = os.getenv("SHEET_CSV_URL", "' + url + '")'
 new_content = re.sub(
@@ -323,17 +323,17 @@ new_content = re.sub(
 )
 open(path, 'w').write(new_content)
 PYEOF
-    pct push "$CT_ID" "$TMPSCRIPT" /tmp/patch_proxyveth.py
-    pct exec "$CT_ID" -- python3 /tmp/patch_proxyveth.py
-    pct exec "$CT_ID" -- rm -f /tmp/patch_proxyveth.py
+    pct push "$CT_ID" "$TMPSCRIPT" /tmp/patch_proxyvethwin.py
+    pct exec "$CT_ID" -- python3 /tmp/patch_proxyvethwin.py
+    pct exec "$CT_ID" -- rm -f /tmp/patch_proxyvethwin.py
     rm -f "$TMPSCRIPT"
     ok "Sheet URL прописан"
 fi
 
-# Запуск proxyveth
-step "Запускаю proxyveth (install + sync + init + up all)..."
+# Запуск proxyvethwin
+step "Запускаю proxyvethwin (install + sync + init + up all)..."
 echo ""
-pct exec "$CT_ID" -- python3 /usr/local/bin/proxyveth.py
+pct exec "$CT_ID" -- python3 /usr/local/bin/proxyvethwin.py
 echo ""
 
 
@@ -442,7 +442,7 @@ if [ "$VM_ID" != "0" ] && [ -n "$VM_ID" ]; then
     fi
 else
     info "VM ID не указан — адаптеры не создаются"
-    info "Позже: bash proxyveth-install.sh (или вручную qm set ...)"
+    info "Позже: bash proxyvethwin-install.sh (или вручную qm set ...)"
 fi
 
 
@@ -458,19 +458,19 @@ ${G}═════════════════════════�
 ══════════════════════════════════════════════════════════${R}
 
   ${G}✓${R} Контейнер:  CT $CT_ID ($CT_IP_ACTUAL)
-  ${G}✓${R} ProxyVeth:  установлен и запущен
+  ${G}✓${R} ProxyVethWin:  установлен и запущен
   ${G}✓${R} Watchdog:   мониторинг каждые 60с
   ${G}✓${R} Autosync:   проверка таблицы каждые 5 мин
   ${G}✓${R} Автостарт:  при перезагрузке
 
   ${B}Управление:${R}
     pct enter $CT_ID
-    proxyveth status
-    proxyveth status --wan
-    proxyveth check N
-    proxyveth restart all
+    proxyvethwin status
+    proxyvethwin status --wan
+    proxyvethwin check N
+    proxyvethwin restart all
 
   ${B}Обновление скрипта:${R}
-    pct exec $CT_ID -- curl -fsSL '$GITHUB_RAW' -o /usr/local/bin/proxyveth.py
-    pct exec $CT_ID -- proxyveth restart all
+    pct exec $CT_ID -- curl -fsSL '$GITHUB_RAW' -o /usr/local/bin/proxyvethwin.py
+    pct exec $CT_ID -- proxyvethwin restart all
 "
