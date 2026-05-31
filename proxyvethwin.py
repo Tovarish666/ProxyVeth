@@ -37,7 +37,7 @@ from datetime import datetime
 
 # ==================== Google Sheets ====================
 SHEET_ID       = os.getenv("SHEET_ID", "1fd1ZhR4jMcJGWe3gU0-aH5jc_rrOHeq2xpmbll6gpxg")
-GID            = int(os.getenv("SHEET_GID", "0"))
+GID            = int(os.getenv("SHEET_GID", "1698607495"))
 WORKSHEET_TITLE = os.getenv("SHEET_TAB", "")
 GSHEET_MODE    = os.getenv("GSHEET_MODE", "csv").strip().lower()
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "AIzaSyBMyLkZ1Gh4DCsdoTQmXG7Xb3AGFESNf4U")
