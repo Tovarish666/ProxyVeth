@@ -46,7 +46,7 @@ SERVICE_ACCOUNT_JSON = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "service_acco
 SHEET_CSV_URL  = os.getenv("SHEET_CSV_URL",
     "https://docs.google.com/spreadsheets/d/e/"
     "2PACX-1vRpX9Ms_SGyJPPIlmRJPX3pkFzHzSLAvKnHE2-ulRAqLdNmQIsq2plb7"
-    "_jpDBhYmE2SQuYOqBAfiY73/pub?gid=0&single=true&output=csv")
+    "_jpDBhYmE2SQuYOqBAfiY73/pub?gid=1698607495&single=true&output=csv")
 
 # ==================== Paths ====================
 CONFIG_DIR     = Path(os.getenv("PROXYVETHWIN_DIR", "/etc/proxyvethwin"))
