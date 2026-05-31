@@ -720,7 +720,7 @@ def ns_up(n, modem):
     vlan_id = VLAN_OFFSET + n
     ph = modem["proxy_host"]
     pp = modem["proxy_port"]
-    proxy_url = f"socks5://{modem['login']}:{modem['password']}@{ph}:{pp}"
+    proxy_url = f"http://{modem['login']}:{modem['password']}@{ph}:{pp - 1}"
     mgmt_ip = f"{MGMT_SUBNET}.{n + 1}"
 
     print(f"\n  {B}── NS {n} ──{R}  VLAN={vlan_id}  proxy={ph}:{pp}")
